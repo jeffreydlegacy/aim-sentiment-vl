@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.pyc
+
+# Runtime logs
+meter.jsonl
+escalations.jsonl
+
+# Local scripts (optional)
+sanity.sh
+

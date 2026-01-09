@@ -24,7 +24,9 @@ COUNTS_LOCK = Lock()
 TOTAL_REQUESTS = 0
 BY_ENDPOINT = Counter ()
 LAST_TS = None
+
 ESCALATE_COUNT = 0
+ESCALATE_BY_ENDPOINT = Counter ()
 
 
 # ---------- Models ----------
@@ -54,20 +56,19 @@ def log_call(request_id: str, endpoint: str) -> None:
     global TOTAL_REQUESTS, LAST_TS
 
     ts = datetime.now(timezone.utc).isoformat()
-    event = {
-        "ts": ts,
-        "request_id": request_id,
-        "endpoint": endpoint,
-    }
+    event = {"ts": ts, "request_id": request_id, "endpoint": endpoint}
 
-    # in-memory counters (fast)
     with COUNTS_LOCK:
         TOTAL_REQUESTS += 1
         BY_ENDPOINT[endpoint] += 1
         LAST_TS = ts
 
-    # file log (durable)
     with METER_LOG.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(event) + "\n")
+
+def log_escalation(event: dict) -> None:
+    """Write escalation events to escalations.jsonl"""
+    with ESCALATE_LOG.open("a", encoding="utf-8") as f:
         f.write(json.dumps(event) + "\n")
 
 
@@ -86,6 +87,9 @@ def metrics():
             "by_endpoint": dict(BY_ENDPOINT),
             "last_request_at": LAST_TS,
             "log_file": str(METER_LOG),
+
+            "escalate_count": ESCALATE_COUNT,
+            "escalate_by_endpoint": dict(ESCALATE_BY_ENDPOINT),
         }
 
           
@@ -132,9 +136,13 @@ def analyze(req: SentimentRequest):
         issue = "negative_sentiment"
 
 
-    # escalation tracking (CORRECT LOCATION)
-    global ESCALATE_COUNT
-    ESCALATE_COUNT += 1
+    # escalation tracking (ONLY if escalation happened)
+    if escalate:
+        global ESCALATE_COUNT
+
+        with COUNTS_LOCK:
+            ESCALATE_COUNT += 1
+            ESCALATE_BY_ENDPOINT["analyze"] += 1
 
     log_escalation({
         "ts": datetime.now(timezone.utc).isoformat(),
@@ -142,6 +150,7 @@ def analyze(req: SentimentRequest):
         "endpoint": "/analyze",
         "text": req.text,
         "matched_negative": matched_negative,
+        "issue": issue,
     }) 
  
 
