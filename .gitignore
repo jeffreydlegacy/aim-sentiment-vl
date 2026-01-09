@@ -6,6 +6,4 @@ __pycache__/
 meter.jsonl
 escalations.jsonl
 
-# Local scripts (optional)
-sanity.sh
 
