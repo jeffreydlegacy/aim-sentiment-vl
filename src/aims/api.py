@@ -35,11 +35,20 @@ def health():
 def handle(msg: MessageIn):
     result = handle_message(msg.message)
 
+    # Telemetry hook (monkeypatched in tests)
     log_event({
         "type": "handle_message",
-        "route": result.get("route"),
-        "issue": result.get("issue"),
+        "route": result["route"],
+        "issue": result["issue"],
     })
 
-    return result
+# IMPORTANT: return the full result, untouched
+return {
+    "route": result["route"],
+    "issue": result["issue"],
+    "reply": result["reply"],
+    "confidence": result.get("confidence", 0.0),
+    "escalate": result.get("escalate", False),
+    "meta": result.get("meta", {}),
+    }
 
