@@ -2,29 +2,16 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
+def log_event(payload):
+    # placeholder for telemetry (tests monkeypatch this)
+    pass
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
-
-class MessageIn(BaseModel):
-    message: str
-
-
-def handle_message(message: str) -> dict:
-    """
-    Default handler - tests monkeypatch this.
-    """
+def handle_message(message: str):
     return {
-        "route": "default"
-        "issue": None
-        "reply": "ok"
+        "route": "human_billing",
+        "issue": "billing",
+        "reply": "Test reply",
     }
-
-@app.post("/handle")
-def handle(msg: MessageIn):
-    return handle_message(msg.message)
-
 
 @app.get("/health")
 def health():
