@@ -51,6 +51,8 @@ def handle(msg: MessageIn):
         "reply": result["reply"],
         "confidence": result.get("confidence", 0.0),
         "escalate": result.get("escalate", False),
-        "meta": result.get("meta", {}),
-    }
+        "meta": {
+            "ts": STARTED_AT,
+            **result.get("meta", {}),
+    },
 
