@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, timezone
 import time
 
 app = FastAPI()
-STARTED_AT = datetime.now(UTC).isoformat()
+STARTED_AT = datetime.now(timezone.utc).isoformat()
 
 class MessageIn(BaseModel):
     message: str
@@ -31,6 +31,41 @@ def health():
         "version": "1",
         "started_at": STARTED_AT,
     }
+
+@app.post("/analyze")
+def analyze(payload: dict):
+    text = (payload.get("text") or "").lower()
+
+    matched_positive = []
+    escalate = False
+    issue = None
+
+    if "love" in text:
+        matched_positive.append("love")
+
+    if "terrible" in text or "awful" in text:
+        sentiment = "negative"
+        escalate = True
+        issue = "negative_sentiment"
+
+        # mixed case: both positive + negative
+        if matched_positive:
+            sentiment = "neutral"
+            escalate = False
+            issue = None
+
+    elif matched_positive:
+        sentiment = "positive"
+    else:
+        sentiment = "neutral"
+
+    return {
+        "sentiment": sentiment,
+        "escalate": escalate,
+        "issue": issue,
+        "matched_positive": matched_positive,
+    }
+
 
     # Telemetry hook (monkeypatched in tests)
     log_event({
