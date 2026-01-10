@@ -1,9 +1,10 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from datetime import datetime
+import time
 
 app = FastAPI()
-STARTED_AT = datetime.utcnow().isoformat()
+STARTED_AT = datetime.now(UTC).isoformat()
 
 class MessageIn(BaseModel):
     message: str
@@ -31,18 +32,15 @@ def health():
         "started_at": STARTED_AT,
     }
 
-@app.post("/v1/handle")
-def handle(msg: MessageIn):
-    result = handle_message(msg.message)
-
     # Telemetry hook (monkeypatched in tests)
     log_event({
-        "type": "handle_message",
+        "type": "handle_message", 
         "route": result["route"],
         "issue": result["issue"],
     })
 
-    # IMPORTANT: return the full result, untouched
+    # IMPORTANT: return the full result, (route/issue/reply/confidence/escalate)
+    # and ensure meta has ts + elapsed_ms
     return {
         "version": "1",
         "started_at": STARTED_AT,
