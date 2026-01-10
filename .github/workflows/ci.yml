@@ -28,5 +28,5 @@ jobs:
 
       - name: Run tests
         run: |
-          PYTHONPATH=src pytest -q
+          PYTHONPATH=src pytest -q src/pyhypercycle-aim/tests
           
