@@ -1,25 +1,25 @@
 name: CI
 
 on:
-    push:
-    pull_request:
+  push:
+  pull_request:
 
 jobs:
-    test:
-      runs-on: ubuntu-latest
+  test:
+    runs-on: ubuntu-latest
 
     strategy:
-    matrix:
-      python-version: ["3.12", "3.11"]
+      matrix:
+        python-version: ["3.12", "3.11"]
 
     steps:
       - name: Checkout
-      uses: actions/checkout@v4
+        uses: actions/checkout@v4
 
       - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
         run: |
