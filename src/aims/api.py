@@ -54,5 +54,6 @@ def handle(msg: MessageIn):
         "meta": {
             "ts": STARTED_AT,
             **result.get("meta", {}),
-    },
+        },
+    }
 
