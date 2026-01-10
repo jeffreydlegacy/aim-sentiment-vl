@@ -44,6 +44,8 @@ def handle(msg: MessageIn):
 
 # IMPORTANT: return the full result, untouched
 return {
+    "version": "1",
+    "started_at": STARTED_AT,
     "route": result["route"],
     "issue": result["issue"],
     "reply": result["reply"],
