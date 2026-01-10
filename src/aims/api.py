@@ -42,15 +42,15 @@ def handle(msg: MessageIn):
         "issue": result["issue"],
     })
 
-# IMPORTANT: return the full result, untouched
-return {
-    "version": "1",
-    "started_at": STARTED_AT,
-    "route": result["route"],
-    "issue": result["issue"],
-    "reply": result["reply"],
-    "confidence": result.get("confidence", 0.0),
-    "escalate": result.get("escalate", False),
-    "meta": result.get("meta", {}),
+    # IMPORTANT: return the full result, untouched
+    return {
+        "version": "1",
+        "started_at": STARTED_AT,
+        "route": result["route"],
+        "issue": result["issue"],
+        "reply": result["reply"],
+        "confidence": result.get("confidence", 0.0),
+        "escalate": result.get("escalate", False),
+        "meta": result.get("meta", {}),
     }
 
