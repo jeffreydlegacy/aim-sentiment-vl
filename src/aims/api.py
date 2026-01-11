@@ -2,27 +2,20 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from datetime import datetime, timezone
 import time
+import uuid
 
 app = FastAPI()
 STARTED_AT = datetime.now(timezone.utc).isoformat()
 
+
 class MessageIn(BaseModel):
     message: str
 
-def log_event(payload):
-    # stub — tests monkeypatch this
-    pass
 
-def handle_message(message: str):
-    # base response used by tests
-    return {
-        "route": "human_billing",
-        "issue": "billing",
-        "reply": "Test reply",
-        "confidence": 0.5,    
-        "escalate": False,
-        "meta": {},
-    }
+def log_event(payload):
+    # stub - tests monkeypatch this
+    return None
+
 
 @app.get("/health")
 def health():
@@ -32,61 +25,86 @@ def health():
         "started_at": STARTED_AT,
     }
 
+
 @app.post("/analyze")
 def analyze(payload: dict):
     text = (payload.get("text") or "").lower()
 
     matched_positive = []
-    escalate = False
+    matched_negative = []
+
     issue = None
+    escalate = False
+    score = 0.5 # default
 
     if "love" in text:
         matched_positive.append("love")
 
     if "terrible" in text or "awful" in text:
-        sentiment = "negative"
-        escalate = True
+        matched_negative.append("terrible" if "terrible" in text else "awful")
         issue = "negative_sentiment"
+        escalate = True
 
-        # mixed case: both positive + negative
-        if matched_positive:
-            sentiment = "neutral"
-            escalate = False
-            issue = None
-
+    # Determine sentiment
+    if matched_negative and matched_positive:
+        sentiment = "neutral"
+        escalate = False
+        issue = None
+    elif matched_negative:
+        sentiment = "negative"
+        score = 0.2
     elif matched_positive:
         sentiment = "positive"
+        score = 0.8
     else:
         sentiment = "neutral"
 
     return {
-        "sentiment": sentiment,
+        "request_id": str(uuid.uuid4()),
+        "version": "1.0.0",
+        "sentiment": sentiment,  
+        "score": score,
         "escalate": escalate,
         "issue": issue,
         "matched_positive": matched_positive,
-    }
+        "matched_negative": matched_negative,
+        "explanation": (
+            "No sentiment keywords matched."
+            if not (matched_positive or matched_negative)
+            else "Keywords matched."
+        ),
+        "route": "sentiment_v1",
+}
 
 
-    # Telemetry hook (monkeypatched in tests)
-    log_event({
-        "type": "handle_message", 
-        "route": result["route"],
-        "issue": result["issue"],
-    })
+@app.post("/v1/handle")
+def handle(msg: MessageIn):
+    start = time.perf_counter()
 
-    # IMPORTANT: return the full result, (route/issue/reply/confidence/escalate)
-    # and ensure meta has ts + elapsed_ms
+    analysis = analyze({"text": msg.message})
+
+    elapsed_ms = int((time.perf_counter() - start) * 1000)
+
+    # Telemetry
+    log_event(
+        {
+            "type": "handle_message",
+            "route": analysis.get("route"),
+            "issue": analysis.get("issue"),
+        }
+    )
+
     return {
-        "version": "1",
+        "version": "1.0.0",
         "started_at": STARTED_AT,
-        "route": result["route"],
-        "issue": result["issue"],
-        "reply": result["reply"],
-        "confidence": result.get("confidence", 0.0),
-        "escalate": result.get("escalate", False),
+        "route": "sentiment_v1",
+        "issue": analysis.get("issue"),
+        "reply": f"Sentiment detected: {analysis.get('sentiment')}",
+        "confidence": analysis.get("score", 0.5),
+        "escalate": analysis.get("escalate", False),
         "meta": {
             "ts": STARTED_AT,
-            **result.get("meta", {}),
+            "elapsed_ms": elapsed_ms,
+            **analysis,
         },
     }
-
