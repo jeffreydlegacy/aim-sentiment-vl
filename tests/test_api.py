@@ -1,5 +1,5 @@
 from fastapi.testclient import TestClient
-from aims.api import app
+from src.aims.api import app
 
 client = TestClient(app)
 
