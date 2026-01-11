@@ -111,12 +111,7 @@ def analyze(payload: AnalyzeIn) -> AnalyzeOut:
     )
 
 
-@app.post(
-    "/v1/handle",
-    response_model=HandleOut,
-    response_model_exclude_none=True
-)
-
+@app.post("/v1/handle", response_model=HandleOut, response_model_exclude_none=True)
 def handle(msg: MessageIn):
     start = time.perf_counter()
 
@@ -146,7 +141,7 @@ def handle(msg: MessageIn):
     return {
         "version": "1.0.0",
         "started_at": STARTED_AT,
-        "route": "sentiment_v1",
+        "route": analysis.route,
         "issue": analysis.issue,
         "reply": f"Sentiment detected: {analysis.sentiment}",
         "confidence": analysis.score,
